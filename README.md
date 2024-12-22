@@ -1,20 +1,48 @@
-# Gemini Real-time Chat & Screen Share Assistant
+#  cursor-canvas-Agent-
 
-A powerful real-time application that combines Google's Gemini AI with screen sharing and interactive chat capabilities. This application enables users to share their screen, get AI-powered analysis, and have natural conversations with the Gemini AI model.
+
+A powerful real-time application that combines Google's Gemini AI with screen sharing, interactive cursor canvas, and chat capabilities. This application enables users to share their screen, get AI-powered analysis, and have natural conversations with the Gemini AI model while providing interactive cursor visualization and tracking.
 
 ## 🌟 Features
+
+- **Interactive Cursor Canvas System**
+  - Real-time cursor position tracking and visualization
+  - Dual cursor system (user cursor in blue, AI cursor in red)
+  - Smooth cursor animations with interpolation
+  - Cursor position synchronization across multiple users
+  - Click-point visualization and tracking
+  - Cursor trail effects for better visibility
+  - Intelligent cursor movement based on AI responses
+  - Screen coordinate mapping for accurate positioning
+
+- **Advanced Screen Analysis**
+  - Bounding box detection for UI elements
+  - Element highlighting on cursor hover
+  - Interactive region selection
+  - Real-time screen element analysis
+  - Automatic UI component detection
+  - Visual feedback for detected elements
+  - Coordinate-based element identification
+  - Screen region annotation capabilities
 
 - **Real-time Chat with Gemini AI**
   - Natural language conversations
   - Context-aware responses
   - Message history tracking
   - Real-time typing indicators
+  - Cursor position-based contextual responses
+  - Screen content analysis integration
+  - Multi-modal interaction support
 
 - **Screen Sharing Capabilities**
   - High-quality screen capture
   - Real-time screen analysis
   - Interactive cursor tracking
   - Bounding box detection for UI elements
+  - Screen region selection
+  - Multi-monitor support
+  - Dynamic resolution adaptation
+  - Low-latency streaming
 
 - **Voice Input Support**
   - Voice message recording
@@ -66,17 +94,30 @@ http://localhost:3000
 
 ## 💡 Usage
 
-1. **Start Screen Sharing**
+1. **Interactive Cursor Features**
+   - Move your mouse to see the blue user cursor
+   - Watch the red AI cursor respond to interactions
+   - Click to highlight specific screen regions
+   - Use the cursor for precise element selection
+   - Observe cursor animations during AI analysis
+   - Experience synchronized cursor movements
+   - See real-time bounding box detection
+
+2. **Screen Sharing and Analysis**
    - Click the "Start Screen Share" button
    - Select the window/screen to share
    - Use the "Analyze Screen" button for AI analysis
+   - Watch as the AI cursor identifies UI elements
+   - See bounding boxes appear around detected components
+   - Get real-time analysis of screen content
+   - Use cursor to interact with detected elements
 
-2. **Chat with AI**
+3. **Chat with AI**
    - Type messages in the chat input
    - Press Enter or click Send
    - View real-time AI responses
 
-3. **Voice Input**
+4. **Voice Input**
    - Click the microphone button
    - Record your message
    - Wait for AI response
