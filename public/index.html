@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+        .screen-section {
+            flex: 2;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        #video-container {
+            flex: 1;
+            position: relative;
+            background: #f8f9fa;
+        }
+        #screen-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        #screen-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .controls {
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn i {
+            font-size: 18px;
+        }
+        .btn-primary {
+            background: #0095ff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0077cc;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+            position: relative;
+        }
+        .user-message {
+            background: #e3f2fd;
+            margin-left: auto;
+        }
+        .ai-message {
+            background: #f5f5f5;
+        }
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        #message-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        #message-input:focus {
+            outline: none;
+            border-color: #0095ff;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+        .loading.active {
+            display: block;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #0095ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: block;
+        }
+        .voice-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .voice-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #6c757d;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .voice-btn:hover {
+            background: #5a6268;
+        }
+        .voice-btn.recording {
+            background: #dc3545;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .bounding-box {
+            position: absolute;
+            border: 2px solid #0095ff;
+            background: rgba(0, 149, 255, 0.1);
+            pointer-events: none;
+        }
+        .bounding-box-label {
+            position: absolute;
+            background: #0095ff;
+            color: white;
+            padding: 2px 6px;
+            font-size: 12px;
+            border-radius: 3px;
+            top: -20px;
+            left: 0;
+        }
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 15px !important;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background: #93959f;
+            border-radius: 50%;
+            margin: 0 2px;
+            display: inline-block;
+            animation: bounce 1.3s linear infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        
+        @keyframes bounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-4px);
+            }
+        }
+        
+        .message {
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="screen-section">
+            <div id="video-container">
+                <canvas id="screen-canvas"></canvas>
+                <video id="screen-video" autoplay playsinline muted></video>
+                <div id="bounding-boxes"></div>
+                <div class="loading"></div>
+            </div>
+            <div class="controls">
+                <button id="start-share" class="btn btn-primary">
+                    <i class="material-icons">screen_share</i>
+                    Start Screen Share
+                </button>
+                <button id="stop-share" class="btn btn-danger" style="display: none;">
+                    <i class="material-icons">stop</i>
+                    Stop Share
+                </button>
+                <button id="analyze-screen" class="btn btn-secondary" style="display: none;">
+                    <i class="material-icons">analytics</i>
+                    Analyze Screen
+                </button>
+            </div>
+        </div>
+        <div class="chat-section">
+            <div id="chat-messages"></div>
+            <div class="chat-input">
+                <input type="text" id="message-input" placeholder="Type your message...">
+                <button id="send-btn" class="btn btn-primary">
+                    <i class="material-icons">send</i>
+                </button>
+            </div>
+            <div class="voice-controls">
+                <button id="voice-btn" class="voice-btn">
+                    <i class="material-icons">mic</i>
+                    Start Voice Input
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        // Elements
+        const canvas = document.getElementById('screen-canvas');
+        const ctx = canvas.getContext('2d');
+        const video = document.getElementById('screen-video');
+        const startBtn = document.getElementById('start-share');
+        const stopBtn = document.getElementById('stop-share');
+        const analyzeBtn = document.getElementById('analyze-screen');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        const loading = document.querySelector('.loading');
+        const voiceBtn = document.getElementById('voice-btn');
+        const boundingBoxesContainer = document.getElementById('bounding-boxes');
+
+        let prevX = 0, prevY = 0;
+        let isSharing = false;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        // Voice input handling
+        async function setupVoiceInput() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    socket.emit('voice input', audioBlob);
+                    audioChunks = [];
+                };
+
+                voiceBtn.addEventListener('click', () => {
+                    if (!isRecording) {
+                        mediaRecorder.start();
+                        isRecording = true;
+                        voiceBtn.classList.add('recording');
+                        voiceBtn.innerHTML = '<i class="material-icons">mic</i>Stop Recording';
+                    } else {
+                        mediaRecorder.stop();
+                        isRecording = false;
+                        voiceBtn.classList.remove('recording');
+                        voiceBtn.innerHTML = '<i class="material-icons">mic</i>Start Voice Input';
+                    }
+                });
+            } catch (error) {
+                console.error('Error setting up voice input:', error);
+                voiceBtn.disabled = true;
+                voiceBtn.innerHTML = '<i class="material-icons">mic_off</i>Voice Input Not Available';
+            }
+        }
+
+        // Initialize voice input
+        setupVoiceInput();
+
+        // Function to create bounding boxes
+        function createBoundingBox(coords, label) {
+            const box = document.createElement('div');
+            box.className = 'bounding-box';
+            box.style.left = `${coords.x_min}px`;
+            box.style.top = `${coords.y_min}px`;
+            box.style.width = `${coords.x_max - coords.x_min}px`;
+            box.style.height = `${coords.y_max - coords.y_min}px`;
+
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'bounding-box-label';
+            labelDiv.textContent = label;
+            box.appendChild(labelDiv);
+
+            return box;
+        }
+
+        // Function to update bounding boxes
+        function updateBoundingBoxes(boxes) {
+            boundingBoxesContainer.innerHTML = '';
+            boxes.forEach(box => {
+                const boxElement = createBoundingBox(box.coords, box.label);
+                boundingBoxesContainer.appendChild(boxElement);
+            });
+        }
+
+        // Cursor functions
+        function drawCursor(x, y, type = 'user') {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            
+            if (type === 'user') {
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(0, 149, 255, 0.6)';
+            } else {
+                ctx.arc(x, y, 12, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(220, 53, 69, 0.6)';
+            }
+            
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function moveAiCursor(x, y) {
+            const duration = 500;
+            let startTime = null;
+
+            function animate(currentTime) {
+                if (!startTime) startTime = currentTime;
+                const progress = (currentTime - startTime) / duration;
+
+                if (progress < 1) {
+                    const currentX = prevX + (x - prevX) * progress;
+                    const currentY = prevY + (y - prevY) * progress;
+                    drawCursor(currentX, currentY, 'ai');
+                    requestAnimationFrame(animate);
+                } else {
+                    drawCursor(x, y, 'ai');
+                    prevX = x;
+                    prevY = y;
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Screen capture and analysis
+        async function captureScreen() {
+            if (!isSharing) return;
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            const imageData = tempCanvas.toDataURL('image/jpeg', 0.8);
+            socket.emit('screen content', imageData);
+        }
+
+        // Screen sharing
+        startBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: { cursor: 'never' },
+                    audio: false
+                });
+                
+                video.srcObject = stream;
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+                analyzeBtn.style.display = 'inline-block';
+                isSharing = true;
+
+                const track = stream.getVideoTracks()[0];
+                const settings = track.getSettings();
+                canvas.width = settings.width;
+                canvas.height = settings.height;
+
+                track.addEventListener('ended', () => {
+                    stopSharing();
+                });
+            } catch (err) {
+                console.error('Error sharing screen:', err);
+                alert('Failed to start screen sharing');
+            }
+        });
+
+        function stopSharing() {
+            const stream = video.srcObject;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            video.srcObject = null;
+            startBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            analyzeBtn.style.display = 'none';
+            isSharing = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            boundingBoxesContainer.innerHTML = '';
+        }
+
+        stopBtn.addEventListener('click', stopSharing);
+        analyzeBtn.addEventListener('click', captureScreen);
+
+        // Chat functionality
+        function addMessage(message, isUser = true, animate = true) {
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            if (animate) {
+                div.style.opacity = '0';
+                div.style.transform = 'translateY(20px)';
+            }
+            
+            div.textContent = message;
+            chatMessages.appendChild(div);
+            
+            if (animate) {
+                setTimeout(() => {
+                    div.style.transition = 'all 0.3s ease';
+                    div.style.opacity = '1';
+                    div.style.transform = 'translateY(0)';
+                }, 10);
+            }
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const div = document.createElement('div');
+            div.className = 'message ai-message typing-indicator';
+            div.innerHTML = '<span></span><span></span><span></span>';
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return div;
+        }
+
+        let typingIndicator = null;
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                addMessage(message, true);
+                socket.emit('chat message', message);
+                messageInput.value = '';
+                messageInput.focus();
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Socket events with improved handling
+        socket.on('typing', (isTyping) => {
+            if (isTyping && !typingIndicator) {
+                typingIndicator = addTypingIndicator();
+            } else if (!isTyping && typingIndicator) {
+                typingIndicator.remove();
+                typingIndicator = null;
+            }
+        });
+
+        socket.on('ai response', (response) => {
+            if (typingIndicator) {
+                typingIndicator.remove();
+                typingIndicator = null;
+            }
+            addMessage(response, false);
+        });
+
+        socket.on('new message', (data) => {
+            addMessage(`${data.content}`, false);
+        });
+
+        // Socket events
+        socket.on('cursor move', (position) => {
+            if (isSharing) {
+                moveAiCursor(position.x, position.y);
+            }
+        });
+
+        // Mouse tracking
+        canvas.addEventListener('mousemove', (e) => {
+            if (isSharing) {
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+                drawCursor(x, y, 'user');
+                socket.emit('cursor position', { x, y });
+            }
+        });
+    </script>
+</body>
+</html> 
